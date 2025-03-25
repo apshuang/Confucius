@@ -1,0 +1,32 @@
+
+cluster_size: 3
+
+nodes:
+  node1:
+    host: 10.10.3.94
+    ssh_port: 22
+    api_port: 4001
+    db_username: centos
+    db_password: centos
+    chaos_username: root
+    chaos_password: centos
+  node2:
+    host: 10.10.1.211
+    ssh_port: 22
+    api_port: 4001
+    db_username: centos
+    db_password: centos
+    chaos_username: root
+    chaos_password: centos
+  node3:
+    host: 10.10.2.131
+    ssh_port: 22
+    api_port: 4001
+    db_username: centos
+    db_password: centos
+    chaos_username: root
+    chaos_password: centos
+
+
+timeout: 5
+retry_count: 3

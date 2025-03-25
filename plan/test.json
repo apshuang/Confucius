@@ -1,0 +1,14 @@
+{
+    "thought": "The issue is caused by network packet loss affecting Raft consensus, leading to duplicate insertions. To reproduce this, we first ensure the cluster is running normally, then introduce network packet loss on node2’s Raft port while executing an insertion. We verify the effects by running a select query and checking data integrity after the fault is removed.",
+    "total_time": "2m",
+    "events": [
+      {
+        "title": "single_insert",
+        "type": "workload",
+        "description": "Insert a single row into the table.",
+        "start_time": "2s",
+        "times": "1"
+      }
+    ]
+  }
+  
