@@ -7,6 +7,7 @@ def init_mapping(yaml_parser: YamlParser):
         database_config: DatabaseConfig = yaml_parser.get_database_config(node_name)
         db = Database(database_config)
         alias_host_dict[node_name] = database_config.host
+        host_alias_dict[database_config.host] = node_name
         alias_database_dict[node_name] = db
         
         chaos_config: ChaosConfig = yaml_parser.get_chaos_config(node_name)
@@ -34,10 +35,15 @@ def close_databases_and_injectors():
             logging.error(f"Error occured when close injector's connection: {str(e)}")   
         
         
-def run(mode: str, cluster_config_path: Path, direct_json_path: Path = None):
+async def run(mode: str, cluster_config_path: Path, direct_json_path: Path = None):
     yaml_parser = YamlParser(cluster_config_path)
     init_mapping(yaml_parser)
+    
+    close_databases_and_injectors()
+    
     init_databases_and_injectors()
+    await asyncio.sleep(1)
+    list(alias_database_dict.values())[0].init_table_tc()
     
     if mode == "direct":
         with open(direct_json_path, "r", encoding="utf-8") as file:
@@ -47,14 +53,14 @@ def run(mode: str, cluster_config_path: Path, direct_json_path: Path = None):
     
     plan_parser = PlanParser(plan_data)
     total_time: int = plan_parser.total_time
-    for event in plan_parser.events_list:
+    for event in plan_parser.event_list:
         if isinstance(event, Nemesis):
-            event.inject()
+            asyncio.create_task(event.inject())
         elif isinstance(event, Workload):
-            event.start()
+            asyncio.create_task(event.start())
         elif isinstance(event, Check):
-            event.start()
-    asyncio.sleep(total_time)
+            asyncio.create_task(event.start())
+    await asyncio.sleep(total_time)
     
     close_databases_and_injectors()
     
@@ -63,6 +69,6 @@ if __name__ == "__main__":
     mode = "direct"
     cluster_config_path: Path = "E:/Confucius/rqlite_cluster.yaml"
     direct_json_path: Path = "E:/Confucius/plan.json"
-    # cluster_config_path: Path = "/home/centos/Confucius/rqlite_cluster.yaml"
-    # direct_json_path: Path = "/home/centos/Confucius/plan.json"
-    run(mode, cluster_config_path, direct_json_path)
+    cluster_config_path: Path = "/home/centos/Confucius/cluster_config/rqlite_cluster.yaml"
+    direct_json_path: Path = "/home/centos/Confucius/plan/final_plan_test.json"
+    asyncio.run(run(mode, cluster_config_path, direct_json_path))

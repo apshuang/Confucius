@@ -44,3 +44,5 @@ class ChaosConfig:
     
 
 alias_host_dict: dict[str, str] = {}
+host_alias_dict: dict[str, str] = {}
+injected_host_list: list[str] = []

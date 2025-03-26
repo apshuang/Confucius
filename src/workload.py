@@ -6,32 +6,33 @@ from abc import ABC, abstractmethod
 
 from .db import Database
 from .tools import time_string_to_seconds
+from .scope_calculator import ScopeCalculator
 
 count = 0
 
 class Workload(ABC):
     """所有workload的基类"""
     name: str
-    target_hosts: list[str]
-    target_database: list[Database]
+    target_scope: str
     start_time: int
     times: int
     
-    def __init__(self, name: str, hosts: list[str], database: list[Database], start_time: str, times: int):
+    def __init__(self, name: str, scope: str, start_time: str, times: int):
         self.name = name
-        self.target_hosts = hosts
-        self.target_database = database
+        self.target_scope = scope
         self.start_time = time_string_to_seconds(start_time)
         self.times = times
         
     @abstractmethod
-    def start(self):
+    async def start(self):
         pass
     
-    def execute_sql(self, database: Database, sql: str):
-        return database.execute(sql)
+    def execute_sql(self, sql: str):
+        target_databases = ScopeCalculator.get_databases_from_scope(self.target_scope)
+        for database in target_databases:
+            database.execute(sql)
     
-    def query_sql(self, database: Database, sql: str):
+    def query_sql(self, sql: str):
         return database.query(sql)
         
     def __str__(self):
@@ -39,15 +40,15 @@ class Workload(ABC):
     
 
 class SingleInsert(Workload):
-    def __init__(self, hosts, database, start_time, times):
-        super().__init__("Single Insert", hosts, database, start_time, times)
+    def __init__(self, scope, start_time, times):
+        super().__init__("Single Insert", scope, start_time, times)
     
     async def start(self):
-        asyncio.sleep(self.start_time)
+        await asyncio.sleep(self.start_time)
         global count
         count += 1
-        sql = f"insert into tc values('james', {count})"
-        self.execute_sql(self.target_database[0], sql)
+        sql = [f'INSERT INTO tc VALUES("james", {count})']
+        self.execute_sql(sql)
         
         
 WORKLOAD_MAPPING: dict[str, Type[Workload]] = {

@@ -20,7 +20,7 @@ class Check(ABC):
         self.start_time = time_string_to_seconds(start_time)
         
     @abstractmethod
-    def start(self):
+    async def start(self):
         pass
     
     def query_sql(self, database: Database, sql: str):
@@ -35,7 +35,7 @@ class IntegrityCheck(Check):
         super().__init__("Integrity Check", hosts, database, start_time)
     
     async def start(self):
-        asyncio.sleep(self.start_time)
+        await asyncio.sleep(self.start_time)
         sql = f"select * from tc ordered by count"
         output = self.query_sql(self.target_database[0], sql)
         # @todo：还未实现实质性的检查

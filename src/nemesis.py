@@ -29,12 +29,12 @@ class Nemesis(ABC):
         return f"{self.name} on {str(self.scope)} starts at {self.start_time} for {self.duration}"
 
     @abstractmethod
-    def inject(self):
+    async def inject(self):
         """注入故障"""
         pass
 
     @abstractmethod
-    def recover(self):
+    async def recover(self):
         """恢复故障"""
         pass
     
@@ -82,12 +82,12 @@ class NetworkLoss(NetworkNemesis):
         self.percent = percent
 
     async def inject(self):
-        asyncio.sleep(self.start_time)
+        await asyncio.sleep(self.start_time)
         logging.info(f"Injecting {self}...")
         command = f"blade create network loss --interface eth0 --exclude-port 22,4001 --timeout {self.duration} --percent {self.percent}"
         self.dispatch_inject_command(command)
         
-    def recover(self):
+    async def recover(self):
         logging.info(f"Recovering {self}...")
         self.dispatch_recover_command()
         
@@ -98,12 +98,12 @@ class NetworkDelay(NetworkNemesis):
         self.delay_time = delay_time
         
     async def inject(self):
-        asyncio.sleep(self.start_time)
+        await asyncio.sleep(self.start_time)
         logging.info(f"Injecting {self}...")
         command = f"blade create network delay --interface eth0 --exclude-port 22,4001 --timeout {self.duration} --time {self.delay_time}"
         self.dispatch_inject_command(command)
 
-    def recover(self):
+    async def recover(self):
         logging.info(f"Recovering {self}...")
         self.dispatch_recover_command()
         
@@ -114,12 +114,12 @@ class NetworkDuplicate(NetworkNemesis):
         self.percent = percent
 
     async def inject(self):
-        asyncio.sleep(self.start_time)
+        await asyncio.sleep(self.start_time)
         logging.info(f"Injecting {self}...")
         command = f"blade create network duplicate --interface eth0 --exclude-port 22,4001 --timeout {self.duration} --percent {self.percent}"
         self.dispatch_inject_command(command)
 
-    def recover(self):
+    async def recover(self):
         logging.info(f"Recovering {self}...")
         self.dispatch_recover_command()
         
@@ -130,12 +130,12 @@ class NetworkCorrupt(NetworkNemesis):
         self.percent = percent
 
     async def inject(self):
-        asyncio.sleep(self.start_time)
+        await asyncio.sleep(self.start_time)
         logging.info(f"Injecting {self}...")
         command = f"blade create network corrupt --interface eth0 --exclude-port 22,4001 --timeout {self.duration} --percent {self.percent}"
         self.dispatch_inject_command(command)
 
-    def recover(self):
+    async def recover(self):
         logging.info(f"Recovering {self}...")
         self.dispatch_recover_command()
         

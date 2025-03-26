@@ -3,7 +3,7 @@ import colorlog
 
 def setup_logger():
     logger = logging.getLogger()
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
 
     formatter = colorlog.ColoredFormatter(
         "%(log_color)s%(asctime)s - %(levelname)s - %(message)s",

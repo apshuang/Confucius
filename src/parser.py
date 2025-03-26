@@ -65,7 +65,7 @@ class PlanParser:
         if WorkloadClass is None:
             raise ValueError(f"Unknown workload type: {title}")
         
-        return Workload(
+        return WorkloadClass(
             scope=workload_info.get("scope", "none"),
             start_time=workload_info.get("start_time", "0s"),
             times=workload_info.get("times", "0")

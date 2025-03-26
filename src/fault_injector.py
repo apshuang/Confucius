@@ -34,13 +34,14 @@ class FaultInjector:
                     raise Exception(error)
                 return output
             except Exception as e:
-                logging.warn(f"Retrying to execute {command} for {i+1}/{self.config.retry_count}....")
-        logging.error(f"[ERROR] Failed to execute {command}: {e} for {self.config.retry_count} times")    
-        raise Exception(f"[ERROR] Failed to execute {command}: {e} for {self.config.retry_count} times")
+                logging.warn(f"Retrying to execute {command}: {e} for {i+1}/{self.config.retry_count}....")
+        logging.error(f"[ERROR] Failed to execute {command} for {self.config.retry_count} times")    
+        raise Exception(f"[ERROR] Failed to execute {command} for {self.config.retry_count} times")
 
     def close(self):
-        self.ssh_client.close()
-        logging.info(f"[INFO] Connection to {self.host} has already closed.")
+        if self.ssh_client:
+            self.ssh_client.close()
+            logging.info(f"[INFO] Connection to {self.host} has already closed.")
         
         
 alias_injector_dict: dict[str, FaultInjector] = {}
