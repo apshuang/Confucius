@@ -30,11 +30,12 @@ class FaultInjector:
                 stdin, stdout, stderr = self.ssh_client.exec_command(command)
                 output = stdout.read().decode()
                 error = stderr.read().decode()
+                print(output)
                 if error:
                     raise Exception(error)
                 return output
             except Exception as e:
-                logging.warn(f"Retrying to execute {command}: {e} for {i+1}/{self.config.retry_count}....")
+                logging.warning(f"Retrying to execute {command}: {e} for {i+1}/{self.config.retry_count}....")
         logging.error(f"[ERROR] Failed to execute {command} for {self.config.retry_count} times")    
         raise Exception(f"[ERROR] Failed to execute {command} for {self.config.retry_count} times")
 

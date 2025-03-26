@@ -79,7 +79,7 @@ class Database:
                 else:
                     raise Exception(f"Status_code: {response.status_code}, error: {response.text}")
             except Exception as e:
-                logging.warn(f"Retrying to execute {sql}: {e} for {i+1}/{self.config.retry_count}....")
+                logging.warning(f"Retrying to execute {sql}: {e} for {i+1}/{self.config.retry_count}....")
         logging.error(f"[ERROR] Failed to execute {sql} for {self.config.retry_count} times")    
         raise Exception(f"[ERROR] Failed to execute {sql} for {self.config.retry_count} times")
         
@@ -91,11 +91,11 @@ class Database:
                 response = requests.post(url, json=sql, headers={"Content-Type": "application/json"})
                 if response.status_code == 200:
                     logging.info(f"Query {sql} successfully.")
-                    return results = (response.json()).get("results")
+                    return (response.json()).get("results")
                 else:
                     raise Exception(f"Status_code: {response.status_code}, error: {response.text}")
             except Exception as e:
-                logging.warn(f"Retrying to query {sql} for {i+1}/{self.config.retry_count}....")
+                logging.warning(f"Retrying to query {sql} for {i+1}/{self.config.retry_count}....")
         logging.error(f"[ERROR] Failed to query {sql} for {self.config.retry_count} times")    
         raise Exception(f"[ERROR] Failed to query {sql} for {self.config.retry_count} times")
         

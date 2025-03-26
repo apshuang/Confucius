@@ -55,10 +55,10 @@ class ScopeCalculator:
                 follower_list = list(set(node_host_list) - set(leader_host))
                 host_list = random.sample(follower_list, 1)
         except ValueError as e:
-            logging.warn(f"The candidate list may be empty, please examine the scope you offer.")
+            logging.warning(f"The candidate list may be empty, please examine the scope you offer.")
              
         if len(host_list) == 0:
-            logging.warn(f"The scope {scope} is empty, please examine the scope you offer.")
+            logging.warning(f"The scope {scope} is empty, please examine the scope you offer.")
         injector_list: list[FaultInjector] = []
         for host in host_list:
             injector_list.append(alias_injector_dict[host_alias_dict[host]])
@@ -84,10 +84,10 @@ class ScopeCalculator:
                 follower_list = list(set(node_host_list) - set(leader_host))
                 host_list = list(set(follower_list) & set(injected_host_list))
         except ValueError as e:
-            logging.warn(f"The candidate list may be empty, please examine the scope you offer.")
+            logging.warning(f"The candidate list may be empty, please examine the scope you offer.")
              
         if len(host_list) == 0:
-            logging.warn(f"The scope {scope} is empty, please examine the scope you offer.")
+            logging.warning(f"The scope {scope} is empty, please examine the scope you offer.")
         database_list: list[Database] = []
         for host in host_list:
             database_list.append(alias_database_dict[host_alias_dict[host]])

@@ -5,7 +5,8 @@ from typing import Type
 from abc import ABC, abstractmethod
 
 from .fault_injector import FaultInjector
-from .tools import time_string_to_seconds
+from .tools import time_string_to_seconds, seconds_to_time_string
+from .scope_calculator import ScopeCalculator
 
 class Nemesis(ABC):
     """所有故障注入的基类"""
@@ -14,7 +15,7 @@ class Nemesis(ABC):
     nemesis_subtype: str
     target_scope: str
     start_time: int
-    duration: str
+    duration: int
     unique_id: dict[FaultInjector, list[str]] = {}
     
     def __init__(self, name: str, n_type: str, n_subtype: str, scope: str, start_time: str, duration: str):
@@ -23,10 +24,10 @@ class Nemesis(ABC):
         self.subtype = n_subtype
         self.scope = scope
         self.start_time = time_string_to_seconds(start_time)
-        self.duration = duration
+        self.duration = time_string_to_seconds(duration)
         
     def __str__(self):
-        return f"{self.name} on {str(self.scope)} starts at {self.start_time} for {self.duration}"
+        return f"{self.name} on {str(self.scope)} starts at {seconds_to_time_string(self.start_time)}s for {self.duration}s"
 
     @abstractmethod
     async def inject(self):
@@ -35,12 +36,13 @@ class Nemesis(ABC):
 
     @abstractmethod
     async def recover(self):
+        # @todo: 这里还有问题，应该怎么去除那些injected_host
         """恢复故障"""
         pass
     
     def dispatch_inject_command(self, command):
-        # 这里还有问题，要先把scope转成target_injectors
-        for injector in self.target_injectors:
+        target_injectors = ScopeCalculator.get_injectors_from_scope(self.target_scope)
+        for injector in target_injectors:
             output = injector.execute_command(command)
             output_dict = json.loads(output)
             if output_dict.get("code", 0) != 200 or not output_dict.get("success", False):
@@ -70,15 +72,9 @@ class Nemesis(ABC):
         return json.dumps(info_dict)
 
 
-class NetworkNemesis(Nemesis):
-    """所有网络故障的基类"""
-    def __init__(self, name: str, subtype: str, scope: str, start_time: str, duration: str):
-        super().__init__(name, "Network", subtype, scope, start_time, duration)
-
-
-class NetworkLoss(NetworkNemesis):
-    def __init__(self, scope: str, start_time: str, duration: str, percent: int = 100):
-        super().__init__("Packet_Loss", "Loss", scope, start_time, duration)
+class NetworkLoss(Nemesis):
+    def __init__(self, scope: str, start_time: str, duration: str, percent: int):
+        super().__init__("Packet_Loss", "Network", "Loss", scope, start_time, duration)
         self.percent = percent
 
     async def inject(self):
@@ -92,9 +88,9 @@ class NetworkLoss(NetworkNemesis):
         self.dispatch_recover_command()
         
 
-class NetworkDelay(NetworkNemesis):
-    def __init__(self, scope: str, start_time: str, duration: str, delay_time: int = 5):
-        super().__init__("Network Delay", "Delay", scope, start_time, duration)
+class NetworkDelay(Nemesis):
+    def __init__(self, scope: str, start_time: str, duration: str, delay_time: int):
+        super().__init__("Network Delay", "Network", "Delay", scope, start_time, duration)
         self.delay_time = delay_time
         
     async def inject(self):
@@ -108,9 +104,9 @@ class NetworkDelay(NetworkNemesis):
         self.dispatch_recover_command()
         
 
-class NetworkDuplicate(NetworkNemesis):
-    def __init__(self, scope: str, start_time: str, duration: str, percent: int = 100):
-        super().__init__("Packet Duplication", "Duplicate", scope, start_time, duration)
+class NetworkDuplicate(Nemesis):
+    def __init__(self, scope: str, start_time: str, duration: str, percent: int):
+        super().__init__("Packet Duplication", "Network", "Duplicate", scope, start_time, duration)
         self.percent = percent
 
     async def inject(self):
@@ -124,9 +120,9 @@ class NetworkDuplicate(NetworkNemesis):
         self.dispatch_recover_command()
         
 
-class NetworkCorrupt(NetworkNemesis):
-    def __init__(self, scope: str, start_time: str, duration: str, percent: int = 100):
-        super().__init__("Packet Corruption", "Corrupt", scope, start_time, duration)
+class NetworkCorrupt(Nemesis):
+    def __init__(self, scope: str, start_time: str, duration: str, percent: int):
+        super().__init__("Packet Corruption", "Network", "Corrupt", scope, start_time, duration)
         self.percent = percent
 
     async def inject(self):
@@ -140,10 +136,43 @@ class NetworkCorrupt(NetworkNemesis):
         self.dispatch_recover_command()
         
 
-NEMESIS_MAPPING: dict[str, Type[Nemesis]] = {
-    "network_loss": NetworkLoss,
-    "network_delay": NetworkDelay,
-    "network_duplicate": NetworkDuplicate,
-    "network_corrupt": NetworkCorrupt
-}
+class NetworkNemesisFactory:
+    @classmethod
+    def create_network_nemesis(cls, data) -> Nemesis:
+        title = data.get("title")
+        parameters = data.get("parameters", {})
+        if title == "network_loss":
+            percent = parameters.get("percent", 100)
+            return NetworkLoss(
+                scope=data["scope"],
+                start_time=data["start_time"],
+                duration=data["duration"],
+                percent=percent
+            )
+        elif title == "network_delay":
+            delay_time = parameters.get("delay_time", 0)
+            return NetworkDelay(
+                scope=data["scope"],
+                start_time=data["start_time"],
+                duration=data["duration"],
+                delay_time=delay_time
+            )
+        elif title == "network_duplicate":
+            percent = parameters.get("percent", 100)
+            return NetworkDuplicate(
+                scope=data["scope"],
+                start_time=data["start_time"],
+                duration=data["duration"],
+                percent=percent
+            )
+        elif title == "network_corrupt":
+            percent = parameters.get("percent", 100)
+            return NetworkDuplicate(
+                scope=data["scope"],
+                start_time=data["start_time"],
+                duration=data["duration"],
+                percent=percent
+            )
+        else:
+            raise ValueError(f"Unknown nemesis type: {title}")
 

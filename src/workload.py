@@ -5,7 +5,7 @@ from typing import Type
 from abc import ABC, abstractmethod
 
 from .db import Database
-from .tools import time_string_to_seconds
+from .tools import time_string_to_seconds, seconds_to_time_string
 from .scope_calculator import ScopeCalculator
 
 count = 0
@@ -33,10 +33,12 @@ class Workload(ABC):
             database.execute(sql)
     
     def query_sql(self, sql: str):
-        return database.query(sql)
+        target_databases = ScopeCalculator.get_databases_from_scope(self.target_scope)
+        for database in target_databases:
+            database.query(sql)
         
     def __str__(self):
-        return f"{self.name} on {str(self.target_hosts)} starts at {self.start_time} for {self.times} times"
+        return f"{self.name} on {str(self.target_hosts)} starts at {seconds_to_time_string(self.start_time)} for {self.times} times"
     
 
 class SingleInsert(Workload):

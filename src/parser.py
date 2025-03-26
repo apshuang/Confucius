@@ -2,7 +2,7 @@ import yaml
 from typing import Any
 
 from .config import DatabaseConfig, ChaosConfig
-from .nemesis import *
+from .nemesis import Nemesis, NetworkNemesisFactory
 from .workload import *
 from .checker import *
 from .tools import time_string_to_seconds
@@ -48,15 +48,8 @@ class PlanParser:
     @staticmethod
     def parse_nemesis(nemesis_info: dict[str, Any]) -> Nemesis:
         title = nemesis_info.get("title")
-        NemesisClass = NEMESIS_MAPPING.get(title)
-        if NemesisClass is None:
-            raise ValueError(f"Unknown nemesis type: {title}")
-        
-        return NemesisClass(
-            scope=nemesis_info.get("scope", "none"),
-            start_time=nemesis_info.get("start_time", "0s"),
-            duration=nemesis_info.get("duration", "0s")
-        )
+        if title[:7] == "network":
+            return NetworkNemesisFactory.create_network_nemesis(nemesis_info)
         
     @staticmethod
     def parse_workload(workload_info: dict[str, Any]) -> Workload:
