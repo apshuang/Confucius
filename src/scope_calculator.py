@@ -82,7 +82,8 @@ class ScopeCalculator:
                 host_list = list(set(leader_host) & set(injected_host_list))
             elif scope == "any_fault_injected_follower":
                 follower_list = list(set(node_host_list) - set(leader_host))
-                host_list = list(set(follower_list) & set(injected_host_list))
+                injected_follower_list = list(set(follower_list) & set(injected_host_list))
+                host_list = random.sample(injected_follower_list, 1)
         except ValueError as e:
             logging.warning(f"The candidate list may be empty, please examine the scope you offer.")
              

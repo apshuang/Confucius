@@ -30,7 +30,6 @@ class FaultInjector:
                 stdin, stdout, stderr = self.ssh_client.exec_command(command)
                 output = stdout.read().decode()
                 error = stderr.read().decode()
-                print(output)
                 if error:
                     raise Exception(error)
                 return output
@@ -42,7 +41,7 @@ class FaultInjector:
     def close(self):
         if self.ssh_client:
             self.ssh_client.close()
-            logging.info(f"[INFO] Connection to {self.host} has already closed.")
+            logging.info(f"[INFO] Connection to {self.config.host} has already closed.")
         
         
 alias_injector_dict: dict[str, FaultInjector] = {}

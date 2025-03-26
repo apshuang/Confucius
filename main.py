@@ -43,7 +43,7 @@ async def run(mode: str, cluster_config_path: Path, direct_json_path: Path = Non
     
     init_databases_and_injectors()
     await asyncio.sleep(1)
-    list(alias_database_dict.values())[0].init_table_tc()
+    await list(alias_database_dict.values())[0].init_table_tc()
     
     if mode == "direct":
         with open(direct_json_path, "r", encoding="utf-8") as file:
@@ -53,16 +53,22 @@ async def run(mode: str, cluster_config_path: Path, direct_json_path: Path = Non
     
     plan_parser = PlanParser(plan_data)
     total_time: int = plan_parser.total_time
-    for event in plan_parser.event_list:
-        if isinstance(event, Nemesis):
-            asyncio.create_task(event.inject())
-        elif isinstance(event, Workload):
-            asyncio.create_task(event.start())
-        elif isinstance(event, Check):
-            asyncio.create_task(event.start())
-    await asyncio.sleep(total_time)
-    
-    close_databases_and_injectors()
+    try:
+        for event in plan_parser.event_list:
+            if isinstance(event, Nemesis):
+                asyncio.create_task(event.inject())
+            elif isinstance(event, Workload):
+                asyncio.create_task(event.start())
+            elif isinstance(event, Check):
+                # 这个地方的await还是有点问题，需要调整
+                task = asyncio.create_task(event.start())
+                result = await task
+                if result == True:
+                    logging.info("BUG FOUND!")
+                    return
+        await asyncio.sleep(total_time)
+    finally:
+        close_databases_and_injectors()
     
 
 if __name__ == "__main__":

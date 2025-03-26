@@ -4,6 +4,7 @@ import logging
 from typing import Type
 from abc import ABC, abstractmethod
 
+from .config import injected_host_list
 from .fault_injector import FaultInjector
 from .tools import time_string_to_seconds, seconds_to_time_string
 from .scope_calculator import ScopeCalculator
@@ -22,12 +23,12 @@ class Nemesis(ABC):
         self.name = name
         self.type = n_type
         self.subtype = n_subtype
-        self.scope = scope
+        self.target_scope = scope
         self.start_time = time_string_to_seconds(start_time)
         self.duration = time_string_to_seconds(duration)
         
     def __str__(self):
-        return f"{self.name} on {str(self.scope)} starts at {seconds_to_time_string(self.start_time)}s for {self.duration}s"
+        return f"{self.name} on {str(self.target_scope)} starts at {seconds_to_time_string(self.start_time)} for {self.duration}s"
 
     @abstractmethod
     async def inject(self):
@@ -50,6 +51,7 @@ class Nemesis(ABC):
                 raise Exception(f"Inject nemesis failed on {injector.config.host}")
             self.unique_id.setdefault(injector, [])
             self.unique_id[injector].append(output_dict["result"])
+            injected_host_list.append(injector.config.host)
             
     def dispatch_recover_command(self):
         for injector, uid_list in self.unique_id.items():

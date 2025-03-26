@@ -11,27 +11,31 @@ from .tools import time_string_to_seconds
 class YamlParser:
     cluster_size: int
     nodes: dict[str, str]
-    retry_count: int
+    inject_retry_count: int
+    query_retry_count: int
+    timeout: int
     
     def __init__(self, yaml_path):
         with open(yaml_path, "r", encoding="utf-8") as file:
             config = yaml.safe_load(file)
             self.cluster_size = config["cluster_size"]
             self.nodes = config["nodes"]
-            self.retry_count = config["retry_count"]
+            self.inject_retry_count = config["inject_retry_count"]
+            self.query_retry_count = config["query_retry_count"]
+            self.timeout = config["timeout"]
     
     def get_nodes_name_list(self) -> list[str]:
         return list(self.nodes.keys())
     
     def get_database_config(self, node_name: str) -> DatabaseConfig:
         node_info = self.nodes[node_name]
-        return DatabaseConfig(node_name, node_info["host"], node_info["api_port"], node_info["ssh_port"], 
-                               node_info["db_username"], node_info["db_password"], self.retry_count)
+        return DatabaseConfig(node_name, node_info["host"], node_info["api_port"], node_info["ssh_port"], node_info["db_username"], 
+                              node_info["db_password"], self.query_retry_count, self.timeout)
         
     def get_chaos_config(self, node_name: str) -> ChaosConfig:
         node_info = self.nodes[node_name]
-        return ChaosConfig(node_name, node_info["host"], node_info["ssh_port"], 
-                           node_info["chaos_username"], node_info["chaos_password"], self.retry_count)
+        return ChaosConfig(node_name, node_info["host"], node_info["ssh_port"], node_info["chaos_username"], 
+                           node_info["chaos_password"], self.inject_retry_count, self.timeout)
         
 
 class PlanParser:
@@ -72,9 +76,8 @@ class PlanParser:
         if CheckClass is None:
             raise ValueError(f"Unknown checker type: {title}")
         
-        return Workload(
-            start_time=check_info.get("start_time", "0s"),
-            times=check_info.get("times", "0")
+        return CheckClass(
+            start_time=check_info.get("start_time", "0s")
         )
 
     @staticmethod

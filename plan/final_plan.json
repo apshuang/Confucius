@@ -30,7 +30,7 @@
             "scope": "any_fault_injected_follower"
         },
         {
-            "title": "data_integrity_check",
+            "title": "integrity_check",
             "type": "check",
             "description": "Verify that only one entry exists in the table.",
             "start_time": "40s",

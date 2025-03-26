@@ -6,9 +6,10 @@ class DatabaseConfig:
     db_username: str
     db_password: str
     retry_count: int
+    timeout: int
     
-    def __init__(self, name: str, host: str, api_port: int, ssh_port: int = 22,
-                 db_username: str = "centos", db_password: str = "password", retry_count: int = 3):
+    def __init__(self, name: str, host: str, api_port: int, ssh_port: int = 22, db_username: str = "centos", 
+                 db_password: str = "password", retry_count: int = 5, timeout: int = 3):
         self.name = name
         self.host = host
         self.api_port = api_port
@@ -16,6 +17,7 @@ class DatabaseConfig:
         self.db_username = db_username
         self.db_password = db_password
         self.retry_count = retry_count
+        self.timeout = timeout
 
     def __str__(self):
         return (f"Database_Config({self.name}: host={str(self.host)}, ssh_port={self.ssh_port}, "
@@ -29,15 +31,17 @@ class ChaosConfig:
     chaos_username: str
     chaos_password: str
     retry_count: int
+    timeout: int
     
     def __init__(self, name: str, host: str, ssh_port: int = 22, chaos_username: str = "root",
-                  chaos_password: str = "password", retry_count: int = 3):
+                 chaos_password: str = "password", retry_count: int = 3, timeout: int = 3):
         self.name = name
         self.host = host
         self.ssh_port = ssh_port
         self.chaos_username = chaos_username
         self.chaos_password = chaos_password
         self.retry_count = retry_count
+        self.timeout = timeout
 
     def __str__(self):
         return (f"Chaos_Config({self.name}: host={self.host}, ssh_port={self.ssh_port}, chaos_username={self.chaos_username}")

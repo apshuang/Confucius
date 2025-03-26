@@ -1,4 +1,5 @@
 import json
+import asyncio
 import requests
 import paramiko
 import logging
@@ -30,14 +31,14 @@ class Database:
         except Exception as e:
             logging.error(f"[ERROR] Failed to execute start_db command: {e}")
     
-    def init_table_tc(self):
+    async def init_table_tc(self):
         try:
             # 此处的语句可以做一些调整，甚至不必一定要用这一套方法来init
             create_table_sql = [
                 "CREATE TABLE IF NOT EXISTS tc (name TEXT, count int);", 
                 "DELETE FROM tc;"
             ]
-            self.execute(create_table_sql)
+            await self.execute(create_table_sql)
             logging.info(f"Init database and create table tc successfully.")
         except Exception as e:
             logging.error(f"Failed to connect to SSH or setup database: {e}")
@@ -62,33 +63,35 @@ class Database:
             logging.error(f"Error closing database at {self.config.host}: {e}")
         
 
-    def execute(self, sql: list[str]) -> bool:
+    async def execute(self, sql: list[str]) -> bool:
         for i in range(self.config.retry_count):
             try:
                 logging.debug(f"Executing SQL query: {sql}")
                 url = f"{self.api_url_base}/execute?pretty&timings"
-                response = requests.post(url, json=sql, headers={"Content-Type": "application/json"})
+                response = requests.post(url, json=sql, headers={"Content-Type": "application/json"}, timeout=self.config.timeout)
                 if response.status_code == 200:
+                    if error_message := (response.json()).get("error"):
+                        raise Exception(error_message)
                     results = (response.json()).get("results")
-                    for result_info in results:
-                        # 如果这里包含多语句的话，是不是还需要有一些rollback？
-                        if result_info.get("error"):
-                            return False
+                    # 如果这里包含多语句的话，是不是还需要有一些rollback？
+                    print(response.status_code)
+                    print(response.text)
                     logging.info(f"Query {sql} executed successfully.")
                     return True
                 else:
                     raise Exception(f"Status_code: {response.status_code}, error: {response.text}")
             except Exception as e:
                 logging.warning(f"Retrying to execute {sql}: {e} for {i+1}/{self.config.retry_count}....")
+            await asyncio.sleep(1)
         logging.error(f"[ERROR] Failed to execute {sql} for {self.config.retry_count} times")    
         raise Exception(f"[ERROR] Failed to execute {sql} for {self.config.retry_count} times")
         
-    def query(self, sql: list[str]):
+    async def query(self, sql: list[str]):
         for i in range(self.config.retry_count):
             try:
                 logging.debug(f"Querying SQL query: {sql}")
                 url = f"{self.api_url_base}/query?pretty&timings"
-                response = requests.post(url, json=sql, headers={"Content-Type": "application/json"})
+                response = requests.post(url, json=sql, headers={"Content-Type": "application/json"}, timeout=self.config.timeout)
                 if response.status_code == 200:
                     logging.info(f"Query {sql} successfully.")
                     return (response.json()).get("results")
@@ -96,6 +99,7 @@ class Database:
                     raise Exception(f"Status_code: {response.status_code}, error: {response.text}")
             except Exception as e:
                 logging.warning(f"Retrying to query {sql} for {i+1}/{self.config.retry_count}....")
+            await asyncio.sleep(0.5)
         logging.error(f"[ERROR] Failed to query {sql} for {self.config.retry_count} times")    
         raise Exception(f"[ERROR] Failed to query {sql} for {self.config.retry_count} times")
         

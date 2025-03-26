@@ -27,15 +27,15 @@ class Workload(ABC):
     async def start(self):
         pass
     
-    def execute_sql(self, sql: str):
+    async def execute_sql(self, sql: str):
         target_databases = ScopeCalculator.get_databases_from_scope(self.target_scope)
         for database in target_databases:
-            database.execute(sql)
+            await database.execute(sql)
     
-    def query_sql(self, sql: str):
+    async def query_sql(self, sql: str):
         target_databases = ScopeCalculator.get_databases_from_scope(self.target_scope)
         for database in target_databases:
-            database.query(sql)
+            await database.query(sql)
         
     def __str__(self):
         return f"{self.name} on {str(self.target_hosts)} starts at {seconds_to_time_string(self.start_time)} for {self.times} times"
@@ -50,7 +50,7 @@ class SingleInsert(Workload):
         global count
         count += 1
         sql = [f'INSERT INTO tc VALUES("james", {count})']
-        self.execute_sql(sql)
+        await self.execute_sql(sql)
         
         
 WORKLOAD_MAPPING: dict[str, Type[Workload]] = {

@@ -28,5 +28,6 @@ nodes:
     chaos_password: centos
 
 
-timeout: 5
-retry_count: 3
+timeout: 3
+inject_retry_count: 3
+query_retry_count: 10
